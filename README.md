@@ -1,115 +1,20 @@
-""
-Într-un hotel, se dorește gestionarea eficientă a rezervărilor, incluzând adăugarea, vizualizarea,
-căutarea după ID, ștergerea și sortarea acestora. Fiecare rezervare include informații despre client, tipul
-camerei, numărul de nopți și prețul total al rezervării. Sistemul trebuie să permită efectuarea acestor operații
-într-un mod organizatși să susțină salvarea și încărcarea datelor din fișiere.
-
-Lucrarea are scopul de a familiariza studenții cu utilizarea pointerilor și a structurilor de date pentru
-gestionarea unui sistem de rezervări într-un hotel, realizând operații de adăugare, căutare, ștergere și sortare
-a rezervărilor, precum și gestionarea fișierelor.
-""
-
-
-
-#include <iostream>
-#include <cstring>
+#include <iostream> 
+#include <cstring> 
 
 using namespace std;
 
+// Structura pentru stocarea datelor unei rezervări
 struct Rezervare {
-    int id;
-    char numeClient[50];
-    char tipCamera[20];
-    int nopti;
-    float pretTotal;
+    int ID;
+    char Client[50];
+    char Camera[20];
+    int Nopti;
+    float Pret;
 };
 
-// functiile inervante
-void afisareMeniu();
-void adaugaRezervare(Rezervare*& rezervari, int& numarRezervari, int& capacitate);
-void afiseazaRezervari(const Rezervare* rezervari, int numarRezervari);
-void cautaRezervareDupaID(const Rezervare* rezervari, int numarRezervari);
-void stergeRezervare(Rezervare* rezervari, int& numarRezervari);
-void sorteazaDupaPret(Rezervare* rezervari, int numarRezervari);
-void sorteazaDupaNume(Rezervare* rezervari, int numarRezervari);
-void filtreazaRezervariPremium(const Rezervare* rezervari, int numarRezervari);
-void actualizeazaRezervare(Rezervare* rezervari, int numarRezervari);
-float calculeazaVenituriTotale(const Rezervare* rezervari, int numarRezervari);
-void salveazaInFisier(const Rezervare* rezervari, int numarRezervari);
-void incarcaDinFisier(Rezervare*& rezervari, int& numarRezervari, int& capacitate);
-bool validareDate(int nopti, float pretTotal);
-void redimensioneazaArray(Rezervare*& rezervari, int& capacitate, int numarRezervari);
-
-int main() {
-    int capacitate = 10, numarRezervari = 0;
-    Rezervare* rezervari = new Rezervare[capacitate];
-    int optiune;
-
-    while (true) {
-        afisareMeniu();
-        cout << "\nAlege o opțiune: ";
-        cin >> optiune;
-
-        switch (optiune) {
-        case 1:
-            adaugaRezervare(rezervari, numarRezervari, capacitate);
-            break;
-        case 2:
-            afiseazaRezervari(rezervari, numarRezervari);
-            break;
-        case 3:
-            cautaRezervareDupaID(rezervari, numarRezervari);
-            break;
-        case 4:
-            stergeRezervare(rezervari, numarRezervari);
-            break;
-        case 5:
-            sorteazaDupaPret(rezervari, numarRezervari);
-            break;
-        case 6:
-            sorteazaDupaNume(rezervari, numarRezervari);
-            break;
-        case 7:
-            filtreazaRezervariPremium(rezervari, numarRezervari);
-            break;
-        case 8:
-            actualizeazaRezervare(rezervari, numarRezervari);
-            break;
-        case 9:
-            cout << "Venituri totale: " << calculeazaVenituriTotale(rezervari, numarRezervari) << " lei\n";
-            break;
-        case 10:
-            salveazaInFisier(rezervari, numarRezervari);
-            break;
-        case 11:
-            incarcaDinFisier(rezervari, numarRezervari, capacitate);
-            break;
-        case 0:
-            delete[] rezervari;
-            return 0;
-        default:
-            cout << "Opțiune invalidă!\n";
-        }
-    }
-}
-
-void afisareMeniu() {
-    cout << "\n===== SISTEM DE GESTIONARE A REZERVĂRILOR HOTELIERE =====";
-    cout << "\n1. Adaugă rezervare";
-    cout << "\n2. Afișează rezervările";
-    cout << "\n3. Caută rezervare după ID";
-    cout << "\n4. Șterge rezervare";
-    cout << "\n5. Sortează după preț";
-    cout << "\n6. Sortează după nume client";
-    cout << "\n7. Filtrează rezervări premium (>500 lei)";
-    cout << "\n8. Actualizează rezervare";
-    cout << "\n9. Calculează venituri totale";
-    cout << "\n10. Salvează în fișier";
-    cout << "\n11. Încarcă din fișier";
-    cout << "\n0. Ieșire";
-}
-
-void redimensioneazaArray(Rezervare*& rezervari, int& capacitate, int numarRezervari) {
+// Adaugă o nouă rezervare în sistem
+void AdaugaRezervare(Rezervare*& rezervari, int& numarRezervari, int& capacitate) {
+    // Mărește capacitatea dacă e nevoie
     if (numarRezervari >= capacitate) {
         capacitate *= 2;
         Rezervare* temp = new Rezervare[capacitate];
@@ -119,270 +24,293 @@ void redimensioneazaArray(Rezervare*& rezervari, int& capacitate, int numarRezer
         delete[] rezervari;
         rezervari = temp;
     }
-}
 
-bool validareDate(int nopti, float pretTotal) {
-    if (nopti <= 0) {
-        cout << "Eroare: Numărul de nopți trebuie să fie pozitiv!\n";
-        return false;
-    }
-    if (pretTotal <= 0) {
-        cout << "Eroare: Prețul total trebuie să fie pozitiv!\n";
-        return false;
-    }
-    return true;
-}
-
-void adaugaRezervare(Rezervare*& rezervari, int& numarRezervari, int& capacitate) {
-    redimensioneazaArray(rezervari, capacitate, numarRezervari);
-
+    // Citește datele rezervării
     cout << "ID: ";
-    cin >> rezervari[numarRezervari].id;
-
-    // verificarea id daca deja este introdus in system
-    for (int i = 0; i < numarRezervari; i++) {
-        if (rezervari[i].id == rezervari[numarRezervari].id) {
-            cout << "Eroare: ID-ul rezervării trebuie să fie unic!\n";
-            return;
-        }
-    }
-
+    cin >> rezervari[numarRezervari].ID;
     cout << "Nume client: ";
     cin.ignore();
-    cin.getline(rezervari[numarRezervari].numeClient, 50);
-
+    cin.getline(rezervari[numarRezervari].Client, 50);
     cout << "Tip cameră: ";
-    cin.getline(rezervari[numarRezervari].tipCamera, 20);
-
+    cin.getline(rezervari[numarRezervari].Camera, 20);
     cout << "Număr de nopți: ";
-    cin >> rezervari[numarRezervari].nopti;
-
+    cin >> rezervari[numarRezervari].Nopti;
+    if (rezervari[numarRezervari].Nopti <= 0) {
+        exit(0);  // Ieșire dacă numărul de nopți e invalid
+    }
     cout << "Preț total: ";
-    cin >> rezervari[numarRezervari].pretTotal;
+    cin >> rezervari[numarRezervari].Pret;
+    if (rezervari[numarRezervari].Pret <= 0) {
+        exit(0);  // Ieșire dacă prețul e invalid
+    } 
 
-    if (validareDate(rezervari[numarRezervari].nopti, rezervari[numarRezervari].pretTotal)) {
-        numarRezervari++;
-        cout << "Rezervare adăugată cu succes!\n";
-    }
+    numarRezervari++;
 }
 
-void afiseazaRezervari(const Rezervare* rezervari, int numarRezervari) {
-    if (numarRezervari == 0) {
-        cout << "Nu există rezervări!\n";
-        return;
-    }
-
-    cout << "\n===== LISTA REZERVĂRILOR =====\n";
-    cout << "ID | Nume Client | Tip Cameră | Nopți | Preț Total\n";
-    cout << "---------------------------------------------------\n";
-
+// Afișează toate rezervările
+void AfisareRezervare(Rezervare* rezervari, int numarRezervari) {
     for (int i = 0; i < numarRezervari; i++) {
-        cout << rezervari[i].id << " | "
-            << rezervari[i].numeClient << " | "
-            << rezervari[i].tipCamera << " | "
-            << rezervari[i].nopti << " nopți | "
-            << rezervari[i].pretTotal << " lei\n";
+        cout << rezervari[i].ID << " | " << rezervari[i].Client << " | " 
+             << rezervari[i].Camera << " | " << rezervari[i].Nopti 
+             << " nopți | " << rezervari[i].Pret << " lei\n";
     }
 }
 
-void cautaRezervareDupaID(const Rezervare* rezervari, int numarRezervari) {
+// Caută o rezervare după ID
+void CautareID(Rezervare* rezervari, int numarRezervari) {
     int idCautat;
     cout << "ID căutat: ";
     cin >> idCautat;
-
+    
+    // Caută rezervarea cu ID-ul dat
     bool gasit = false;
     for (int i = 0; i < numarRezervari; i++) {
-        if (rezervari[i].id == idCautat) {
-            cout << "\n===== DETALII REZERVARE =====\n";
-            cout << "ID: " << rezervari[i].id << "\n";
-            cout << "Nume client: " << rezervari[i].numeClient << "\n";
-            cout << "Tip cameră: " << rezervari[i].tipCamera << "\n";
-            cout << "Număr nopți: " << rezervari[i].nopti << "\n";
-            cout << "Preț total: " << rezervari[i].pretTotal << " lei\n";
+        if (rezervari[i].ID == idCautat) {
+            cout << "Rezervare găsită: " << rezervari[i].Client 
+                 << " - " << rezervari[i].Camera << " (" 
+                 << rezervari[i].Nopti << " nopți, " 
+                 << rezervari[i].Pret << " lei)\n";
             gasit = true;
             break;
         }
     }
-
-    if (!gasit) {
-        cout << "Rezervare inexistentă!\n";
-    }
+    if (!gasit) cout << "Rezervare inexistentă!\n";
 }
 
-void stergeRezervare(Rezervare* rezervari, int& numarRezervari) {
+// Șterge o rezervare după ID
+void StergeRezervare(Rezervare* rezervari, int& numarRezervari) {
     int idSters;
     cout << "ID rezervare de șters: ";
     cin >> idSters;
-
+    
+    // Găsește poziția rezervării
     int indexSters = -1;
     for (int i = 0; i < numarRezervari; i++) {
-        if (rezervari[i].id == idSters) {
+        if (rezervari[i].ID == idSters) {
             indexSters = i;
             break;
         }
     }
-
+    
+    // Șterge rezervarea dacă există
     if (indexSters != -1) {
-        // mutam spre stinga utilizind -1 
         for (int i = indexSters; i < numarRezervari - 1; i++) {
             rezervari[i] = rezervari[i + 1];
         }
         numarRezervari--;
-        cout << "Rezervare ștearsă cu succes!\n";
+        cout << "Rezervare ștearsă!\n";
     }
     else {
         cout << "Rezervare inexistentă!\n";
     }
 }
 
-void sorteazaDupaPret(Rezervare* rezervari, int numarRezervari) {
-    if (numarRezervari <= 1) {
-        cout << "Nu există suficiente rezervări pentru sortare!\n";
-        return;
-    }
-
+// Sortează rezervările după preț
+void SortPret(Rezervare* rezervari, int numarRezervari) {
     for (int i = 0; i < numarRezervari - 1; i++) {
         for (int j = i + 1; j < numarRezervari; j++) {
-            if (rezervari[i].pretTotal > rezervari[j].pretTotal) {
+            if (rezervari[i].Pret > rezervari[j].Pret) {
                 swap(rezervari[i], rezervari[j]);
             }
         }
     }
-    cout << "Rezervările au fost sortate după preț!\n";
+    cout << "Sortare realizată!\n";
 }
 
-void sorteazaDupaNume(Rezervare* rezervari, int numarRezervari) {
-    if (numarRezervari <= 1) {
-        cout << "Nu există suficiente rezervări pentru sortare!\n";
-        return;
-    }
-
+// Sortează rezervările după numele clientului
+void SortNume(Rezervare* rezervari, int numarRezervari) {
     for (int i = 0; i < numarRezervari - 1; i++) {
         for (int j = i + 1; j < numarRezervari; j++) {
-            if (strcmp(rezervari[i].numeClient, rezervari[j].numeClient) > 0) {
+            if (strcmp(rezervari[i].Client, rezervari[j].Client) > 0) {
                 swap(rezervari[i], rezervari[j]);
             }
         }
     }
-    cout << "Rezervările au fost sortate după numele clientului!\n";
+    cout << "Sortare realizată!\n";
 }
 
-void filtreazaRezervariPremium(const Rezervare* rezervari, int numarRezervari) {
-    const float PRET_PREMIUM = 500.0; 
-    cout << "\n===== REZERVĂRI PREMIUM =====\n";
-
-    bool existaPremium = false;
-    for (int i = 0; i < numarRezervari; i++) {
-        if (rezervari[i].pretTotal > PRET_PREMIUM) {
-            cout << rezervari[i].id << " | "
-                << rezervari[i].numeClient << " | "
-                << rezervari[i].tipCamera << " | "
-                << rezervari[i].nopti << " nopți | "
-                << rezervari[i].pretTotal << " lei\n";
-            existaPremium = true;
-        }
-    }
-
-    if (!existaPremium) {
-        cout << "Nu există rezervări premium!\n";
-    }
-}
-
-void actualizeazaRezervare(Rezervare* rezervari, int numarRezervari) {
-    int idActualizat;
-    cout << "ID rezervare de actualizat: ";
-    cin >> idActualizat;
-
-    int indexActualizat = -1;
-    for (int i = 0; i < numarRezervari; i++) {
-        if (rezervari[i].id == idActualizat) {
-            indexActualizat = i;
-            break;
-        }
-    }
-
-    if (indexActualizat == -1) {
-        cout << "Rezervare inexistentă!\n";
-        return;
-    }
-
-    cout << "\nRezerva găsită. Actualizați doar informațiile dorite:\n";
-
-    cout << "Nume client (" << rezervari[indexActualizat].numeClient << "): ";
-    cin.ignore();
-    cin.getline(rezervari[indexActualizat].numeClient, 50);
-
-    cout << "Tip cameră (" << rezervari[indexActualizat].tipCamera << "): ";
-    cin.getline(rezervari[indexActualizat].tipCamera, 20);
-
-    cout << "Număr de nopți (" << rezervari[indexActualizat].nopti << "): ";
-    cin >> rezervari[indexActualizat].nopti;
-
-    cout << "Preț total (" << rezervari[indexActualizat].pretTotal << "): ";
-    cin >> rezervari[indexActualizat].pretTotal;
-
-    if (validareDate(rezervari[indexActualizat].nopti, rezervari[indexActualizat].pretTotal)) {
-        cout << "Rezervare actualizată cu succes!\n";
-    }
-}
-
-float calculeazaVenituriTotale(const Rezervare* rezervari, int numarRezervari) {
-    float sumaTotala = 0;
-
-    for (int i = 0; i < numarRezervari; i++) {
-        sumaTotala += rezervari[i].pretTotal;
-    }
-
-    return sumaTotala;
-}
-
-void salveazaInFisier(const Rezervare* rezervari, int numarRezervari) {
+// Salvează rezervările în fișier
+void Salvare(Rezervare* rezervari, int numarRezervari) {
     FILE* fisier = fopen("rezervari.txt", "w");
-
     if (fisier) {
         for (int i = 0; i < numarRezervari; i++) {
-            fprintf(fisier, "%d,%s,%s,%d,%.2f\n",
-                rezervari[i].id,
-                rezervari[i].numeClient,
-                rezervari[i].tipCamera,
-                rezervari[i].nopti,
-                rezervari[i].pretTotal);
+            fprintf(fisier, "%d,%s,%s,%d,%.2f\n", 
+                   rezervari[i].ID, rezervari[i].Client, rezervari[i].Camera, 
+                   rezervari[i].Nopti, rezervari[i].Pret);
         }
         fclose(fisier);
-        cout << "Rezervările au fost salvate în fișier!\n";
+        cout << "Rezervările au fost salvate în fișier.\n";
     }
     else {
-        cout << "Eroare la deschiderea fișierului pentru scriere!\n";
+        cout << "Eroare la deschiderea fișierului!\n";
     }
 }
 
-void incarcaDinFisier(Rezervare*& rezervari, int& numarRezervari, int& capacitate) {
+// Încarcă rezervările din fișier
+void IncarcareDinFisier(Rezervare*& rezervari, int& numarRezervari, int& capacitate) {
     FILE* fisier = fopen("rezervari.txt", "r");
-
     if (fisier) {
         numarRezervari = 0;
-
-        while (true) {
-            // daca e necesar
-            redimensioneazaArray(rezervari, capacitate, numarRezervari);
-
-            // citim din fisier
-            if (fscanf(fisier, "%d,%49[^,],%19[^,],%d,%f\n",
-                &rezervari[numarRezervari].id,
-                rezervari[numarRezervari].numeClient,
-                rezervari[numarRezervari].tipCamera,
-                &rezervari[numarRezervari].nopti,
-                &rezervari[numarRezervari].pretTotal) != 5) {
-                break;
-            }
-
+        while (fscanf(fisier, "%d,%49[^,],%19[^,],%d,%f\n", 
+              &rezervari[numarRezervari].ID, rezervari[numarRezervari].Client, 
+              rezervari[numarRezervari].Camera, &rezervari[numarRezervari].Nopti, 
+              &rezervari[numarRezervari].Pret) == 5) {
+            
             numarRezervari++;
+            // Mărește capacitatea dacă e nevoie
+            if (numarRezervari >= capacitate) {
+                capacitate *= 2;
+                Rezervare* temp = new Rezervare[capacitate];
+                for (int i = 0; i < numarRezervari; i++) {
+                    temp[i] = rezervari[i];
+                }
+                delete[] rezervari;
+                rezervari = temp;
+            }
         }
-
         fclose(fisier);
-        cout << "S-au încărcat " << numarRezervari << " rezervări din fișier!\n";
+        cout << "Rezervările au fost încărcate din fișier.\n";
     }
     else {
-        cout << "Eroare la deschiderea fișierului pentru citire!\n";
+        cout << "Eroare la deschiderea fișierului!\n";
+    }
+}
+
+// Filtrează rezervările după prima literă a numelui clientului
+void FiltrareDupaPrimaLitera(Rezervare* rezervari, int numarRezervari) {
+    char litera;
+    cout << "Introduceți litera cu care să înceapă numele clientului: ";
+    cin >> litera;
+    bool gasit = false;
+
+    for (int i = 0; i < numarRezervari; i++) {
+        if (rezervari[i].Client[0] == litera) {
+            cout << rezervari[i].ID << " | " << rezervari[i].Client << " | " 
+                 << rezervari[i].Camera << " | " << rezervari[i].Nopti 
+                 << " nopți | " << rezervari[i].Pret << " lei\n";
+            gasit = true;
+        }
+    }
+    if (!gasit) {
+        cout << "Nu există rezervări cu numele care începe cu litera " << litera << "!\n";
+    }
+}
+
+// Actualizează datele unei rezervări existente
+void ActualizeazaRezervare(Rezervare* rezervari, int numarRezervari) {
+    int ID;
+    char Camera[20];
+    int Nopti;
+    float Pret;
+
+    cout << "Introduceti ID-ul rezervarii de actualizat: ";
+    cin >> ID;
+    cout << "Introduceti camera noua: ";
+    cin.ignore();
+    cin.getline(Camera, 20);
+    cout << "Introduceti numarul de nopti: ";
+    cin >> Nopti;
+    if (Nopti <= 0) {
+        exit(0);  // Ieșire dacă numărul de nopți e invalid
+    }
+    cout << "Introduceti pretul: ";
+    cin >> Pret;
+    if (Pret <= 0) {
+        exit(0);  // Ieșire dacă prețul e invalid
+    }
+
+    for (int i = 0; i < numarRezervari; i++) {
+        if (rezervari[i].ID == ID) {
+            strcpy(rezervari[i].Camera, Camera);
+            rezervari[i].Nopti = Nopti;
+            rezervari[i].Pret = Pret;
+            cout << "Rezervare actualizată cu succes!\n";
+            return;
+        }
+    }
+    cout << "Rezervare cu ID-ul " << ID << " nu a fost găsită.\n";
+}
+
+// Calculează venitul total din toate rezervările
+void CalculareVenituri(Rezervare* rezervari, int numarRezervari) {
+    float venitTotal = 0;
+    for (int i = 0; i < numarRezervari; i++) {
+        venitTotal += rezervari[i].Pret;
+    }
+    cout << "Venitul total generat este: " << venitTotal << " lei\n";
+}
+
+int main() {
+    int capacitate = 10, numarRezervari = 0;
+    Rezervare* rezervari = new Rezervare[capacitate];
+
+    while (true) {
+        // Afișează meniul
+        cout << "\n1. Adaugă rezervare";
+        cout << "\n2. Afișează rezervările";
+        cout << "\n3. Caută rezervare după ID";
+        cout << "\n4. Șterge rezervare";
+        cout << "\n5. Sortează";
+        cout << "\n6. Salvează în fișier";
+        cout << "\n7. Încarcă din fișier";
+        cout << "\n8. Filtru dupa litera";
+        cout << "\n9. Actualizeaza rezervare";
+        cout << "\n10. Veniturile generale";
+        cout << "\n0. Ieșire";
+        cout << "\nAlege o opțiune: ";
+
+        int optiune;
+        cin >> optiune;
+
+        // Procesează opțiunea aleasă
+        switch (optiune) {
+            case 0: // Ieșire
+                delete[] rezervari;
+                return 0;
+            case 1: // Adăugare rezervare
+                AdaugaRezervare(rezervari, numarRezervari, capacitate);
+                break;
+            case 2: // Afișare rezervări
+                AfisareRezervare(rezervari, numarRezervari);
+                break;
+            case 3: // Căutare după ID
+                CautareID(rezervari, numarRezervari);
+                break;
+            case 4: // Ștergere rezervare
+                StergeRezervare(rezervari, numarRezervari);
+                break;
+            case 5: { // Sortare
+                int varianta;
+                cout << "Cum dorești să sortezi?\n";
+                cout << "1 - Sortează după preț\n";
+                cout << "2 - Sortează după nume\n";
+                cout << "Introdu varianta: ";
+                cin >> varianta;
+
+                if (varianta == 1) {
+                    SortPret(rezervari, numarRezervari);
+                } else if (varianta == 2) {
+                    SortNume(rezervari, numarRezervari);
+                }
+                break;
+            }
+            case 6: // Salvare în fișier
+                Salvare(rezervari, numarRezervari);
+                break;
+            case 7: // Încărcare din fișier
+                IncarcareDinFisier(rezervari, numarRezervari, capacitate);
+                break;
+            case 8: // Filtrare după litera
+                FiltrareDupaPrimaLitera(rezervari, numarRezervari);
+                break;
+            case 9: // Actualizare rezervare
+                ActualizeazaRezervare(rezervari, numarRezervari);
+                break;
+            case 10: // Calculare venituri
+                CalculareVenituri(rezervari, numarRezervari);
+                break;
+            default:
+                cout << "Opțiune invalidă!\n";
+        }
     }
 }
